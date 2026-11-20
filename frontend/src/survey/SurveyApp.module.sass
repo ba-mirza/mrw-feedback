@@ -1,0 +1,189 @@
+@use "./styles/variables" as *
+
+@keyframes survey-step-in
+  from
+    opacity: 0
+    transform: translateY(12px)
+  to
+    opacity: 1
+    transform: none
+
+@keyframes survey-spin
+  to
+    transform: rotate(360deg)
+
+:global(html), :global(body)
+  margin: 0
+  background: $color-white
+
+:global(*), :global(*::before), :global(*::after)
+  box-sizing: border-box
+
+.survey
+  display: flex
+  flex-direction: column
+  min-height: 100dvh
+  padding: $space-16 $space-16 calc(#{$space-24} + env(safe-area-inset-bottom))
+  font-family: $font-family
+  color: $color-text
+  -webkit-tap-highlight-color: transparent
+
+  &__header
+    display: flex
+    justify-content: center
+    padding-block: $space-8 $space-24
+
+  &__brand
+    font-size: $size-18
+    font-weight: $font-weight-bold
+    letter-spacing: 0.12em
+    color: $color-primary
+
+  &__body
+    display: flex
+    flex: 1
+    flex-direction: column
+    justify-content: center
+    width: 100%
+    max-width: 480px
+    margin-inline: auto
+
+  &__step, &__message
+    display: flex
+    flex-direction: column
+    gap: $space-16
+    animation: survey-step-in 240ms ease-out
+
+  &__message
+    align-items: center
+    text-align: center
+
+  &__progress
+    margin: 0
+    font-size: $size-14
+    color: $color-text-muted
+
+  &__title
+    margin: 0 0 $space-8
+    font-size: $size-24
+    font-weight: $font-weight-bold
+    line-height: 1.25
+
+  &__text
+    margin: 0
+    font-size: $size-16
+    line-height: 1.5
+    color: $color-text-muted
+
+  &__options
+    display: grid
+    gap: $space-12
+
+    &--pair
+      grid-template-columns: 1fr 1fr
+
+  &__option
+    display: flex
+    flex-direction: column
+    align-items: center
+    justify-content: center
+    gap: $space-8
+    min-height: 64px
+    border: 2px solid $color-gray-150
+    border-radius: $radius-16
+    background: $color-white
+    padding: $space-16
+    font: inherit
+    font-size: $size-18
+    font-weight: $font-weight-semi-bold
+    color: $color-text
+    cursor: pointer
+    transition: border-color $duration-fast ease, background-color $duration-fast ease, transform $duration-fast ease
+
+    &:active
+      transform: scale(0.98)
+
+    &:disabled
+      cursor: default
+
+    &:focus-visible
+      outline: 3px solid $color-primary
+      outline-offset: 2px
+
+    &--star
+      min-height: 140px
+
+    &--success
+      color: $color-success
+
+      .survey__option-label
+        color: $color-text
+
+    &--danger
+      color: $color-danger
+
+      .survey__option-label
+        color: $color-text
+
+    &--pending.survey__option--neutral
+      border-color: $color-primary
+      background: $color-primary-light
+
+    &--pending.survey__option--success
+      border-color: $color-success
+      background: $color-success-light
+
+    &--pending.survey__option--danger
+      border-color: $color-danger
+      background: $color-danger-light
+
+  &__star
+    width: 56px
+    height: 56px
+    fill: currentColor
+
+  &__error
+    margin: 0
+    font-size: $size-14
+    color: $color-danger
+
+  &__retry
+    min-height: 52px
+    border: 0
+    border-radius: $radius-16
+    background: $color-primary
+    padding: 0 $space-32
+    font: inherit
+    font-size: $size-16
+    font-weight: $font-weight-semi-bold
+    color: $color-white
+    cursor: pointer
+
+  &__loader
+    align-self: center
+    width: 36px
+    height: 36px
+    border: 3px solid $color-gray-150
+    border-top-color: $color-primary
+    border-radius: 50%
+    animation: survey-spin 800ms linear infinite
+
+@media (hover: hover)
+  .survey__option--neutral:hover:not(:disabled)
+    border-color: $color-primary
+
+  .survey__option--success:hover:not(:disabled)
+    border-color: $color-success
+
+  .survey__option--danger:hover:not(:disabled)
+    border-color: $color-danger
+
+@media (prefers-reduced-motion: reduce)
+  .survey__step, .survey__message
+    animation: none
+
+  .survey__loader
+    animation-duration: 2s
+
+  .survey__option
+    transition: none

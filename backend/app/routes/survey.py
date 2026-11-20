@@ -20,7 +20,7 @@ def start_session(
     user_agent: Annotated[str, Header()] = "",
 ) -> SurveySessionOut:
     ip = request.client.host if request.client else UNKNOWN_IP
-    session = service.start_session(db, settings, data.code, ip, user_agent)
+    session = service.start_session(db, settings, data.code, data.device_id, ip, user_agent)
     return service.to_session_out(session)
 
 

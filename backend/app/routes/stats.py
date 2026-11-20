@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Query
 
 from app.deps import AppSettings, CurrentAdmin, DbSession
-from app.schemas import PointStatsOut, StatsFilter, StatsGranularity, SummaryOut, TimelineOut
+from app.schemas import PointGrouping, PointStatsOut, StatsFilter, StatsGranularity, SummaryOut, TimelineOut
 from app.services import stats as service
 
 router = APIRouter(prefix="/v1/admin/stats", tags=["stats"])
@@ -28,5 +28,11 @@ def timeline(
 
 
 @router.get("/points")
-def points(filters: Filters, db: DbSession, settings: AppSettings, _: CurrentAdmin) -> PointStatsOut:
-    return PointStatsOut(items=service.build_point_stats(db, filters, settings.zone))
+def points(
+    filters: Filters,
+    db: DbSession,
+    settings: AppSettings,
+    _: CurrentAdmin,
+    group_by: Annotated[PointGrouping, Query()] = "point",
+) -> PointStatsOut:
+    return PointStatsOut(items=service.build_point_stats(db, filters, group_by, settings.zone))

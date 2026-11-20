@@ -21,11 +21,16 @@ services:
       DATABASE_URL: postgresql://feedback:feedback@postgres:5432/feedback
       SECRET_KEY: local-dev-secret-local-dev-secret-0000
       SURVEY_BASE_URL: http://localhost:5175
-    ports:
-      - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5175:80"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:

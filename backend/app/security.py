@@ -49,6 +49,6 @@ def generate_point_code() -> str:
     return "".join(secrets.choice(POINT_CODE_ALPHABET) for _ in range(POINT_CODE_LENGTH))
 
 
-def device_fingerprint(ip: str, user_agent: str, settings: Settings) -> str:
-    message = f"{ip}|{user_agent}".encode()
+def device_fingerprint(device_id: str | None, ip: str, user_agent: str, settings: Settings) -> str:
+    message = f"device|{device_id}".encode() if device_id else f"network|{ip}|{user_agent}".encode()
     return hmac.new(settings.SECRET_KEY.encode(), message, hashlib.sha256).hexdigest()

@@ -41,13 +41,15 @@ def find_recent_session(
     return db.scalars(query).first()
 
 
-def start_session(db: Session, settings: Settings, code: str, ip: str, user_agent: str) -> SurveySession:
+def start_session(
+    db: Session, settings: Settings, code: str, device_id: str | None, ip: str, user_agent: str
+) -> SurveySession:
     point = db.scalars(select(Point).where(Point.code == code.strip().lower())).first()
     if point is None or not point.is_active:
         raise HTTPException(status_code=404, detail="point_not_found")
 
     now = utc_now()
-    device_hash = device_fingerprint(ip, user_agent, settings)
+    device_hash = device_fingerprint(device_id, ip, user_agent, settings)
     repeat_since = now - timedelta(hours=settings.REPEAT_WINDOW_HOURS)
     if find_recent_session(db, point.id, device_hash, SessionStatus.COMPLETED, repeat_since):
         raise HTTPException(status_code=409, detail="already_completed")

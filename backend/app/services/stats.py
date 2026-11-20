@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Point, SurveyAnswer, SurveySession
 from app.schemas import (
+    PointGrouping,
     PointStatsItem,
     RateMetric,
     StatsFilter,
@@ -170,22 +171,31 @@ def build_timeline(db: Session, filters: StatsFilter, granularity: StatsGranular
     return TimelineOut(granularity=granularity, items=items)
 
 
-def build_point_stats(db: Session, filters: StatsFilter, zone: ZoneInfo) -> list[PointStatsItem]:
-    buckets = group_rows(load_rows(db, filters, zone), lambda row: row.point_id)
-    points = db.scalars(select(Point).where(Point.id.in_(buckets.keys()))).all()
+def point_group_key(point: Point, group_by: PointGrouping) -> tuple[str, str, str | None]:
+    return (point.region, point.store, point.register_number if group_by == "point" else None)
+
+
+def build_point_stats(
+    db: Session, filters: StatsFilter, group_by: PointGrouping, zone: ZoneInfo
+) -> list[PointStatsItem]:
+    rows = load_rows(db, filters, zone)
+    point_ids = {row.point_id for row in rows}
+    points = {point.id: point for point in db.scalars(select(Point).where(Point.id.in_(point_ids)))}
+    buckets = group_rows(rows, lambda row: point_group_key(points[row.point_id], group_by))
+    ids_by_key = {point_group_key(point, group_by): point.id for point in points.values()}
     items = [
         PointStatsItem(
-            point_id=point.id,
-            region=point.region,
-            store=point.store,
-            register_number=point.register_number,
-            sessions=len(buckets[point.id].sessions),
-            completed_sessions=len(buckets[point.id].completed),
-            completion_rate=buckets[point.id].completion_rate,
-            consultant_rate=buckets[point.id].consultant.rate,
-            lost_demand_rate=buckets[point.id].lost_demand.rate,
-            recommend_rate=buckets[point.id].recommend.rate,
+            point_id=ids_by_key[key] if group_by == "point" else None,
+            region=key[0],
+            store=key[1],
+            register_number=key[2],
+            sessions=len(bucket.sessions),
+            completed_sessions=len(bucket.completed),
+            completion_rate=bucket.completion_rate,
+            consultant_rate=bucket.consultant.rate,
+            lost_demand_rate=bucket.lost_demand.rate,
+            recommend_rate=bucket.recommend.rate,
         )
-        for point in points
+        for key, bucket in buckets.items()
     ]
-    return sorted(items, key=lambda item: (item.region, item.store, item.register_number))
+    return sorted(items, key=lambda item: (item.region, item.store, item.register_number or ""))

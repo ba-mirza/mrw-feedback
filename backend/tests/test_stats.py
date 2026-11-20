@@ -104,6 +104,26 @@ def test_point_comparison(client, auth_headers, seeded):
     ]
 
 
+def test_store_comparison_merges_registers(client, auth_headers, db, seeded):
+    second = Point(code="mega2", region="Алматы", store="Mega", register_number="2")
+    db.add(second)
+    db.flush()
+    add_session(db, second, f"{DAY}T12:00:00+05:00", {"consultant": "green", "availability": "all", "nps": "yes"}, "g")
+    db.commit()
+
+    by_point = get(client, auth_headers, "points")["items"]
+    assert [(item["store"], item["register_number"]) for item in by_point] == [
+        ("Mega", "1"),
+        ("Mega", "2"),
+        ("Keruen", "1"),
+    ]
+
+    by_store = get(client, auth_headers, "points", group_by="store")["items"]
+    mega = next(item for item in by_store if item["store"] == "Mega")
+    assert (mega["point_id"], mega["register_number"], mega["sessions"]) == (None, None, 4)
+    assert mega["recommend_rate"] == 0.6667
+
+
 def test_invalid_period(client, auth_headers, seeded):
     response = client.get(
         "/v1/admin/stats/summary",

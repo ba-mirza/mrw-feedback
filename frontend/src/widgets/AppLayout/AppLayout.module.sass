@@ -1,0 +1,25 @@
+.app-layout
+  display: flex
+  flex-direction: column
+  min-height: 100vh
+  background: var(--mantine-color-gray-0)
+
+  &__header
+    position: sticky
+    top: 0
+    z-index: 100
+    border-bottom: 1px solid var(--mantine-color-gray-3)
+    background: var(--mantine-color-white)
+
+  &__bar
+    display: flex
+    align-items: center
+    justify-content: space-between
+    height: 52px
+
+  &__tabs
+    &::before
+      display: none
+
+  &__main
+    flex: 1

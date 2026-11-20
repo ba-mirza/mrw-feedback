@@ -55,6 +55,7 @@ class PointList(BaseModel):
 
 class SessionStartInput(BaseModel):
     code: str = Field(min_length=1, max_length=32)
+    device_id: str | None = Field(default=None, min_length=16, max_length=64, pattern=r"^[A-Za-z0-9-]+$")
 
 
 class SurveyPointOut(BaseModel):
@@ -74,6 +75,7 @@ class AnswerInput(BaseModel):
 
 
 StatsGranularity = Literal["hour", "day"]
+PointGrouping = Literal["point", "store"]
 
 
 class StatsFilter(BaseModel):
@@ -115,10 +117,10 @@ class TimelineOut(BaseModel):
 
 
 class PointStatsItem(BaseModel):
-    point_id: int
+    point_id: int | None
     region: str
     store: str
-    register_number: str
+    register_number: str | None
     sessions: int
     completed_sessions: int
     completion_rate: float | None

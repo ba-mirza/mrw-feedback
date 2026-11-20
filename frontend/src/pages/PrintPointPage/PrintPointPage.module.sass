@@ -1,0 +1,59 @@
+.print-point
+  display: flex
+  align-items: center
+  justify-content: center
+  min-height: 100vh
+  background: var(--mantine-color-gray-1)
+  padding: 24px
+
+  &__card
+    display: flex
+    flex-direction: column
+    align-items: center
+    width: 105mm
+    min-height: 148mm
+    border-radius: 12px
+    background: var(--mantine-color-white)
+    padding: 10mm 8mm
+    text-align: center
+
+  &__brand
+    margin: 0 0 6mm
+    font-size: 20px
+    font-weight: 800
+    letter-spacing: 0.12em
+    color: var(--mantine-color-marwin-5)
+
+  &__title
+    margin: 0 0 3mm
+    font-size: 22px
+    line-height: 1.2
+
+  &__text
+    margin: 0 0 6mm
+    font-size: 13px
+    line-height: 1.4
+    color: var(--mantine-color-gray-7)
+
+  &__qr
+    width: 60mm
+    height: 60mm
+
+  &__meta
+    margin: auto 0 0
+    padding-top: 6mm
+    font-size: 11px
+    color: var(--mantine-color-gray-6)
+
+@page
+  size: A6
+  margin: 0
+
+@media print
+  .print-point
+    min-height: auto
+    background: none
+    padding: 0
+
+    &__card
+      border-radius: 0

@@ -6,8 +6,13 @@ PHONE_A = {"User-Agent": "phone-a"}
 PHONE_B = {"User-Agent": "phone-b"}
 
 
-def start(client, code, headers=PHONE_A):
-    return client.post("/v1/survey/sessions", json={"code": code}, headers=headers)
+DEVICE_A = "11111111-1111-4111-8111-111111111111"
+DEVICE_B = "22222222-2222-4222-8222-222222222222"
+
+
+def start(client, code, headers=PHONE_A, device_id=None):
+    body = {"code": code} if device_id is None else {"code": code, "device_id": device_id}
+    return client.post("/v1/survey/sessions", json=body, headers=headers)
 
 
 def answer(client, session_id, question, option):
@@ -87,6 +92,22 @@ def test_repeat_after_completion_is_blocked_within_window(client, db, create_poi
     stored.started_at -= timedelta(hours=settings.REPEAT_WINDOW_HOURS + 1)
     db.commit()
     assert start(client, point["code"]).status_code == 200
+
+
+def test_device_id_separates_phones_with_same_network_and_browser(client, create_point):
+    point = create_point()
+    session = start(client, point["code"], device_id=DEVICE_A).json()
+    for question, option in (("consultant", "green"), ("availability", "all"), ("nps", "yes")):
+        answer(client, session["id"], question, option)
+
+    assert start(client, point["code"], device_id=DEVICE_A).status_code == 409
+    assert start(client, point["code"], device_id=DEVICE_B).status_code == 200
+
+
+def test_device_id_format_is_validated(client, create_point):
+    point = create_point()
+    assert start(client, point["code"], device_id="short").status_code == 422
+    assert start(client, point["code"], device_id="x" * 20 + "<script>").status_code == 422
 
 
 def test_answer_validation(client, create_point):
