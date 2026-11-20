@@ -2,8 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { ApiError } from "@/shared/api/http";
 import { saveSurveyAnswer, startSurveySession, type SurveySession } from "@/shared/api/survey";
-
-import { SURVEY_QUESTIONS } from "./questions";
+import { SURVEY_QUESTIONS } from "@/shared/config/survey-questions";
 
 export type SurveyFailure = "already_completed" | "point_not_found" | "network";
 

@@ -20,10 +20,6 @@ QUESTION_OPTIONS: dict[Question, tuple[str, ...]] = {
 
 QUESTION_ORDER: tuple[Question, ...] = (Question.CONSULTANT, Question.AVAILABILITY, Question.NPS)
 
-SATISFIED_CONSULTANT_OPTION = "green"
-LOST_DEMAND_OPTIONS = frozenset({"partial", "none"})
-RECOMMEND_OPTION = "yes"
-
 
 def is_valid_option(question: Question, option: str) -> bool:
     return option in QUESTION_OPTIONS[question]

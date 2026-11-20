@@ -1,201 +1,75 @@
-from collections import Counter
-from collections.abc import Callable, Hashable
-from dataclasses import dataclass, field
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from app.models import Point, SurveyAnswer, SurveySession
-from app.schemas import (
-    PointGrouping,
-    PointStatsItem,
-    RateMetric,
-    StatsFilter,
-    StatsGranularity,
-    SummaryOut,
-    TimelineItem,
-    TimelineOut,
-)
-from app.survey import (
-    LOST_DEMAND_OPTIONS,
-    QUESTION_OPTIONS,
-    RECOMMEND_OPTION,
-    SATISFIED_CONSULTANT_OPTION,
-    Question,
-    SessionStatus,
-)
+from app.schemas import OptionStats, QuestionStats, StatsFilter, SurveyStatsOut
+from app.survey import QUESTION_OPTIONS, QUESTION_ORDER, SessionStatus
 
-MAX_PERIOD_DAYS = 366
-HOURS_IN_DAY = 24
 RATE_PRECISION = 4
-
-
-@dataclass(frozen=True)
-class AnswerRow:
-    session_id: str
-    point_id: int
-    started_at: datetime
-    status: str
-    question: str | None
-    option: str | None
-
-
-@dataclass
-class Bucket:
-    sessions: set[str] = field(default_factory=set)
-    completed: set[str] = field(default_factory=set)
-    answers: dict[str, Counter[str]] = field(default_factory=lambda: {q.value: Counter() for q in Question})
-
-    def add(self, row: AnswerRow) -> None:
-        self.sessions.add(row.session_id)
-        if row.status == SessionStatus.COMPLETED:
-            self.completed.add(row.session_id)
-        if row.question in self.answers and row.option is not None:
-            self.answers[row.question][row.option] += 1
-
-    def metric(self, question: Question, hit_options: frozenset[str]) -> RateMetric:
-        counts = self.answers[question.value]
-        total = sum(counts.values())
-        hits = sum(counts[option] for option in hit_options)
-        return RateMetric(total=total, hits=hits, rate=share(hits, total))
-
-    @property
-    def completion_rate(self) -> float | None:
-        return share(len(self.completed), len(self.sessions))
-
-    @property
-    def consultant(self) -> RateMetric:
-        return self.metric(Question.CONSULTANT, frozenset({SATISFIED_CONSULTANT_OPTION}))
-
-    @property
-    def lost_demand(self) -> RateMetric:
-        return self.metric(Question.AVAILABILITY, LOST_DEMAND_OPTIONS)
-
-    @property
-    def recommend(self) -> RateMetric:
-        return self.metric(Question.NPS, frozenset({RECOMMEND_OPTION}))
 
 
 def share(hits: int, total: int) -> float | None:
     return round(hits / total, RATE_PRECISION) if total else None
 
 
-def period_bounds(filters: StatsFilter, zone: ZoneInfo) -> tuple[datetime, datetime]:
-    if filters.date_from > filters.date_to:
-        raise HTTPException(status_code=422, detail="invalid_period")
-    if (filters.date_to - filters.date_from).days >= MAX_PERIOD_DAYS:
-        raise HTTPException(status_code=422, detail="invalid_period")
-    start = datetime.combine(filters.date_from, time.min, tzinfo=zone)
-    end = datetime.combine(filters.date_to + timedelta(days=1), time.min, tzinfo=zone)
-    return start.astimezone(UTC), end.astimezone(UTC)
+def local_midnight(day: date, zone: ZoneInfo) -> datetime:
+    return datetime.combine(day, time.min, tzinfo=zone).astimezone(UTC)
 
 
-def load_rows(db: Session, filters: StatsFilter, zone: ZoneInfo) -> list[AnswerRow]:
-    start, end = period_bounds(filters, zone)
-    query = (
-        select(
-            SurveySession.id,
-            SurveySession.point_id,
-            SurveySession.started_at,
-            SurveySession.status,
-            SurveyAnswer.question,
-            SurveyAnswer.option,
-        )
-        .join(Point, Point.id == SurveySession.point_id)
-        .outerjoin(SurveyAnswer, SurveyAnswer.session_id == SurveySession.id)
-        .where(SurveySession.started_at >= start, SurveySession.started_at < end)
-    )
+def apply_filters[T: Select](query: T, filters: StatsFilter, zone: ZoneInfo) -> T:
+    if filters.date_from and filters.date_to and filters.date_from > filters.date_to:
+        raise HTTPException(status_code=422, detail="invalid_period")
+    if filters.date_from:
+        query = query.where(SurveySession.started_at >= local_midnight(filters.date_from, zone))
+    if filters.date_to:
+        query = query.where(SurveySession.started_at < local_midnight(filters.date_to + timedelta(days=1), zone))
     if filters.region:
         query = query.where(Point.region == filters.region)
     if filters.store:
         query = query.where(Point.store == filters.store)
     if filters.point_id is not None:
         query = query.where(Point.id == filters.point_id)
-    return [AnswerRow(*row) for row in db.execute(query)]
+    return query
 
 
-def group_rows[K: Hashable](rows: list[AnswerRow], key: Callable[[AnswerRow], K]) -> dict[K, Bucket]:
-    buckets: dict[K, Bucket] = {}
-    for row in rows:
-        buckets.setdefault(key(row), Bucket()).add(row)
-    return buckets
-
-
-def build_summary(db: Session, filters: StatsFilter, zone: ZoneInfo) -> SummaryOut:
-    bucket = group_rows(load_rows(db, filters, zone), lambda _: None).get(None, Bucket())
-    return SummaryOut(
-        sessions=len(bucket.sessions),
-        completed_sessions=len(bucket.completed),
-        completion_rate=bucket.completion_rate,
-        consultant=bucket.consultant,
-        lost_demand=bucket.lost_demand,
-        recommend=bucket.recommend,
-        availability={
-            option: bucket.metric(Question.AVAILABILITY, frozenset({option}))
-            for option in QUESTION_OPTIONS[Question.AVAILABILITY]
-        },
+def build_survey_stats(db: Session, filters: StatsFilter, zone: ZoneInfo) -> SurveyStatsOut:
+    sessions_query = apply_filters(
+        select(SurveySession.status, func.count())
+        .join(Point, Point.id == SurveySession.point_id)
+        .group_by(SurveySession.status),
+        filters,
+        zone,
     )
+    sessions_by_status = {status: count for status, count in db.execute(sessions_query)}
 
+    answers_query = apply_filters(
+        select(SurveyAnswer.question, SurveyAnswer.option, func.count())
+        .join(SurveySession, SurveySession.id == SurveyAnswer.session_id)
+        .join(Point, Point.id == SurveySession.point_id)
+        .group_by(SurveyAnswer.question, SurveyAnswer.option),
+        filters,
+        zone,
+    )
+    counts = {(question, option): count for question, option, count in db.execute(answers_query)}
 
-def timeline_keys(filters: StatsFilter, granularity: StatsGranularity) -> list[str]:
-    if granularity == "hour":
-        return [f"{hour:02d}:00" for hour in range(HOURS_IN_DAY)]
-    days = (filters.date_to - filters.date_from).days + 1
-    return [(filters.date_from + timedelta(days=offset)).isoformat() for offset in range(days)]
-
-
-def timeline_key(started_at: datetime, granularity: StatsGranularity, zone: ZoneInfo) -> str:
-    local = started_at.astimezone(zone)
-    return f"{local.hour:02d}:00" if granularity == "hour" else local.date().isoformat()
-
-
-def build_timeline(db: Session, filters: StatsFilter, granularity: StatsGranularity, zone: ZoneInfo) -> TimelineOut:
-    rows = load_rows(db, filters, zone)
-    buckets = group_rows(rows, lambda row: timeline_key(row.started_at, granularity, zone))
-    items = []
-    for key in timeline_keys(filters, granularity):
-        bucket = buckets.get(key, Bucket())
-        items.append(
-            TimelineItem(
-                bucket=key,
-                sessions=len(bucket.sessions),
-                completed_sessions=len(bucket.completed),
-                consultant_rate=bucket.consultant.rate,
-                lost_demand_rate=bucket.lost_demand.rate,
-                recommend_rate=bucket.recommend.rate,
+    questions = []
+    for question in QUESTION_ORDER:
+        option_counts = [(option, counts.get((question.value, option), 0)) for option in QUESTION_OPTIONS[question]]
+        total = sum(count for _, count in option_counts)
+        questions.append(
+            QuestionStats(
+                question=question,
+                total=total,
+                options=[OptionStats(option=option, count=count, rate=share(count, total)) for option, count in option_counts],
             )
         )
-    return TimelineOut(granularity=granularity, items=items)
 
-
-def point_group_key(point: Point, group_by: PointGrouping) -> tuple[str, str, str | None]:
-    return (point.region, point.store, point.register_number if group_by == "point" else None)
-
-
-def build_point_stats(
-    db: Session, filters: StatsFilter, group_by: PointGrouping, zone: ZoneInfo
-) -> list[PointStatsItem]:
-    rows = load_rows(db, filters, zone)
-    point_ids = {row.point_id for row in rows}
-    points = {point.id: point for point in db.scalars(select(Point).where(Point.id.in_(point_ids)))}
-    buckets = group_rows(rows, lambda row: point_group_key(points[row.point_id], group_by))
-    ids_by_key = {point_group_key(point, group_by): point.id for point in points.values()}
-    items = [
-        PointStatsItem(
-            point_id=ids_by_key[key] if group_by == "point" else None,
-            region=key[0],
-            store=key[1],
-            register_number=key[2],
-            sessions=len(bucket.sessions),
-            completed_sessions=len(bucket.completed),
-            completion_rate=bucket.completion_rate,
-            consultant_rate=bucket.consultant.rate,
-            lost_demand_rate=bucket.lost_demand.rate,
-            recommend_rate=bucket.recommend.rate,
-        )
-        for key, bucket in buckets.items()
-    ]
-    return sorted(items, key=lambda item: (item.region, item.store, item.register_number or ""))
+    return SurveyStatsOut(
+        sessions=sum(sessions_by_status.values()),
+        completed_sessions=sessions_by_status.get(SessionStatus.COMPLETED.value, 0),
+        questions=questions,
+    )

@@ -3,6 +3,7 @@ import { useForm } from "@mantine/form";
 import { useMutation } from "@tanstack/react-query";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
+import logo from "@/assets/logo.svg";
 import { login } from "@/shared/api/auth";
 import { ApiError } from "@/shared/api/http";
 import { ADMIN_ROUTES } from "@/shared/config/routes";
@@ -19,7 +20,7 @@ function redirectTarget(state: unknown) {
   if (typeof state === "object" && state !== null && "from" in state && typeof state.from === "string") {
     return state.from;
   }
-  return ADMIN_ROUTES.dashboard;
+  return ADMIN_ROUTES.points;
 }
 
 export default function LoginPage() {
@@ -43,14 +44,15 @@ export default function LoginPage() {
 
   const errorMessage = loginMutation.error instanceof ApiError ? loginMutation.error.message : null;
 
-  if (token) return <Navigate to={ADMIN_ROUTES.dashboard} replace />;
+  if (token) return <Navigate to={ADMIN_ROUTES.points} replace />;
 
   return (
     <Center h="100vh" bg="gray.0">
       <Paper withBorder shadow="sm" p="xl" w={FORM_WIDTH} maw="calc(100vw - 32px)">
         <form onSubmit={form.onSubmit((values) => loginMutation.mutate(values))}>
           <Stack>
-            <Title order={3}>Опросы MARWIN</Title>
+            <img src={logo} alt="MARWIN" width={120} height={38} />
+            <Title order={3}>Опросы покупателей</Title>
             {errorMessage && <Alert color="red">{errorMessage}</Alert>}
             <TextInput label="E-mail" autoComplete="username" {...form.getInputProps("email")} />
             <PasswordInput label="Пароль" autoComplete="current-password" {...form.getInputProps("password")} />

@@ -1,5 +1,4 @@
 from datetime import date, datetime
-from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -74,60 +73,27 @@ class AnswerInput(BaseModel):
     option: str = Field(min_length=1, max_length=32)
 
 
-StatsGranularity = Literal["hour", "day"]
-PointGrouping = Literal["point", "store"]
-
-
 class StatsFilter(BaseModel):
-    date_from: date
-    date_to: date
+    date_from: date | None = None
+    date_to: date | None = None
     region: str | None = None
     store: str | None = None
     point_id: int | None = None
 
 
-class RateMetric(BaseModel):
-    total: int
-    hits: int
+class OptionStats(BaseModel):
+    option: str
+    count: int
     rate: float | None
 
 
-class SummaryOut(BaseModel):
+class QuestionStats(BaseModel):
+    question: Question
+    total: int
+    options: list[OptionStats]
+
+
+class SurveyStatsOut(BaseModel):
     sessions: int
     completed_sessions: int
-    completion_rate: float | None
-    consultant: RateMetric
-    lost_demand: RateMetric
-    recommend: RateMetric
-    availability: dict[str, RateMetric]
-
-
-class TimelineItem(BaseModel):
-    bucket: str
-    sessions: int
-    completed_sessions: int
-    consultant_rate: float | None
-    lost_demand_rate: float | None
-    recommend_rate: float | None
-
-
-class TimelineOut(BaseModel):
-    granularity: StatsGranularity
-    items: list[TimelineItem]
-
-
-class PointStatsItem(BaseModel):
-    point_id: int | None
-    region: str
-    store: str
-    register_number: str | None
-    sessions: int
-    completed_sessions: int
-    completion_rate: float | None
-    consultant_rate: float | None
-    lost_demand_rate: float | None
-    recommend_rate: float | None
-
-
-class PointStatsOut(BaseModel):
-    items: list[PointStatsItem]
+    questions: list[QuestionStats]

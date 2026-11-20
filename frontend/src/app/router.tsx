@@ -8,9 +8,9 @@ import LoginPage from "@/pages/LoginPage";
 
 import AuthGate from "./AuthGate";
 
-const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const PointsPage = lazy(() => import("@/pages/PointsPage"));
 const PrintPointPage = lazy(() => import("@/pages/PrintPointPage"));
+const StatsPage = lazy(() => import("@/pages/StatsPage"));
 
 function withSuspense(page: ReactNode) {
   return (
@@ -35,9 +35,9 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          { index: true, element: <Navigate to={ADMIN_ROUTES.dashboard} replace /> },
-          { path: ADMIN_ROUTES.dashboard, element: withSuspense(<DashboardPage />) },
+          { index: true, element: <Navigate to={ADMIN_ROUTES.points} replace /> },
           { path: ADMIN_ROUTES.points, element: withSuspense(<PointsPage />) },
+          { path: ADMIN_ROUTES.stats, element: withSuspense(<StatsPage />) },
         ],
       },
     ],

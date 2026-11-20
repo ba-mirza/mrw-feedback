@@ -36,62 +36,27 @@ export interface PointList {
 export type QrFormat = "svg" | "png";
 
 export interface StatsFilter {
-  date_from: string;
-  date_to: string;
+  date_from?: string;
+  date_to?: string;
   region?: string;
   store?: string;
   point_id?: number;
 }
 
-export type StatsGranularity = "hour" | "day";
-
-export interface RateMetric {
-  total: number;
-  hits: number;
+export interface OptionStats {
+  option: string;
+  count: number;
   rate: number | null;
 }
 
-export type AvailabilityOption = "all" | "alternative" | "partial" | "none";
+export interface QuestionStats {
+  question: "consultant" | "availability" | "nps";
+  total: number;
+  options: OptionStats[];
+}
 
-export interface StatsSummary {
+export interface SurveyStats {
   sessions: number;
   completed_sessions: number;
-  completion_rate: number | null;
-  consultant: RateMetric;
-  lost_demand: RateMetric;
-  recommend: RateMetric;
-  availability: Record<AvailabilityOption, RateMetric>;
-}
-
-export interface TimelineItem {
-  bucket: string;
-  sessions: number;
-  completed_sessions: number;
-  consultant_rate: number | null;
-  lost_demand_rate: number | null;
-  recommend_rate: number | null;
-}
-
-export interface StatsTimeline {
-  granularity: StatsGranularity;
-  items: TimelineItem[];
-}
-
-export type PointGrouping = "point" | "store";
-
-export interface PointStats {
-  point_id: number | null;
-  region: string;
-  store: string;
-  register_number: string | null;
-  sessions: number;
-  completed_sessions: number;
-  completion_rate: number | null;
-  consultant_rate: number | null;
-  lost_demand_rate: number | null;
-  recommend_rate: number | null;
-}
-
-export interface PointStatsList {
-  items: PointStats[];
+  questions: QuestionStats[];
 }

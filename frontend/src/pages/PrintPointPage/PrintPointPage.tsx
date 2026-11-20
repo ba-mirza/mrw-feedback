@@ -1,6 +1,7 @@
 import { Alert, Center, Loader } from "@mantine/core";
 import { useParams } from "react-router-dom";
 
+import logo from "@/assets/logo.svg";
 import { usePointQrQuery, usePointQuery } from "@/shared/api/points.queries";
 
 import styles from "./PrintPointPage.module.sass";
@@ -36,7 +37,7 @@ export default function PrintPointPage() {
   return (
     <div className={styles["print-point"]}>
       <article className={styles["print-point__card"]}>
-        <p className={styles["print-point__brand"]}>MARWIN</p>
+        <img className={styles["print-point__logo"]} src={logo} alt="MARWIN" />
         <h1 className={styles["print-point__title"]}>Оцените нашу работу</h1>
         <p className={styles["print-point__text"]}>Наведите камеру телефона на код. Это три вопроса, меньше минуты.</p>
         <img className={styles["print-point__qr"]} src={qrQuery.data} alt="QR-код опроса" onLoad={handleQrLoad} />

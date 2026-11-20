@@ -1,6 +1,7 @@
 import { clsx } from "clsx";
 
-import type { SurveyOption } from "../model/questions";
+import type { SurveyOption } from "@/shared/config/survey-questions";
+
 
 import styles from "../SurveyApp.module.sass";
 

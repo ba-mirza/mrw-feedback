@@ -1,6 +1,7 @@
+import logo from "@/assets/logo.svg";
 import { SURVEY_PATH_PREFIX } from "@/shared/config/routes";
+import { SURVEY_QUESTIONS } from "@/shared/config/survey-questions";
 
-import { SURVEY_QUESTIONS } from "./model/questions";
 import { useSurvey, type SurveyFailure } from "./model/use-survey";
 import MessageScreen from "./ui/MessageScreen";
 import QuestionStep from "./ui/QuestionStep";
@@ -25,7 +26,7 @@ export default function SurveyApp() {
   return (
     <div className={styles["survey"]}>
       <header className={styles["survey__header"]}>
-        <span className={styles["survey__brand"]}>MARWIN</span>
+        <img className={styles["survey__logo"]} src={logo} alt="MARWIN" width={120} height={38} />
       </header>
       <main className={styles["survey__body"]} aria-live="polite">
         {state.kind === "loading" && <div className={styles["survey__loader"]} aria-label="Загрузка" />}

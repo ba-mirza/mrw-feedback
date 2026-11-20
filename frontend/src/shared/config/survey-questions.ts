@@ -7,6 +7,7 @@ export interface SurveyOption {
   label: string;
   tone: OptionTone;
   isStar?: boolean;
+  reportLabel?: string;
 }
 
 export interface SurveyQuestionConfig {
@@ -22,8 +23,8 @@ export const SURVEY_QUESTIONS: SurveyQuestionConfig[] = [
     title: "Довольны ли вы работой консультанта?",
     layout: "pair",
     options: [
-      { value: "green", label: "Доволен", tone: "success", isStar: true },
-      { value: "red", label: "Не доволен", tone: "danger", isStar: true },
+      { value: "green", label: "Доволен", tone: "success", isStar: true, reportLabel: "Зелёная звезда" },
+      { value: "red", label: "Не доволен", tone: "danger", isStar: true, reportLabel: "Красная звезда" },
     ],
   },
   {

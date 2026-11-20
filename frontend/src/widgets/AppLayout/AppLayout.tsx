@@ -1,8 +1,9 @@
 import { Button, Container, Group, Tabs, Text } from "@mantine/core";
-import { IconChartBar, IconLogout, IconQrcode } from "@tabler/icons-react";
+import { IconLogout, IconQrcode, IconTable } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
+import logo from "@/assets/logo.svg";
 import { useAdminProfileQuery } from "@/shared/api/profile.queries";
 import { ADMIN_ROUTES } from "@/shared/config/routes";
 import { setAccessToken } from "@/shared/lib/session";
@@ -12,8 +13,8 @@ import styles from "./AppLayout.module.sass";
 const ICON_SIZE = 16;
 
 const SECTIONS = [
-  { path: ADMIN_ROUTES.dashboard, label: "Дашборд", icon: IconChartBar },
   { path: ADMIN_ROUTES.points, label: "Кассы и QR", icon: IconQrcode },
+  { path: ADMIN_ROUTES.stats, label: "Статистика", icon: IconTable },
 ];
 
 export default function AppLayout() {
@@ -38,9 +39,7 @@ export default function AppLayout() {
       <header className={styles["app-layout__header"]}>
         <Container size="xl" className={styles["app-layout__bar"]}>
           <Group gap="sm" wrap="nowrap">
-            <Text fw={800} c="marwin">
-              MARWIN
-            </Text>
+            <img className={styles["app-layout__logo"]} src={logo} alt="MARWIN" width={100} height={32} />
             <Text c="dimmed" size="sm" visibleFrom="xs">
               опросы покупателей
             </Text>
