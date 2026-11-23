@@ -1,18 +1,6 @@
 export interface AdminProfile {
-  id: number;
+  user_id: string;
   name: string;
-  email: string;
-  permissions: string[];
-}
-
-export interface AuthTokens {
-  access_token: string;
-  expires_in: number;
-}
-
-export interface ValidationIssue {
-  field: string;
-  message: string;
 }
 
 export interface Point {

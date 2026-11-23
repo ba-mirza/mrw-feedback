@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { QUERY_STALE_TIME } from "@/shared/config/query-cache";
+import { renderQr } from "@/shared/lib/qr";
 
-import { createPoint, fetchPoint, fetchPoints, fetchPointQr, updatePoint } from "./points";
+import { createPoint, fetchPoint, fetchPoints, updatePoint } from "./points";
 import type { Point, PointInput, PointList } from "./types";
 
 export const pointsQueryKeys = {
@@ -36,7 +37,7 @@ export function usePointQuery(id: number) {
 export function usePointQrQuery(point: Point | null) {
   return useQuery({
     queryKey: pointsQueryKeys.qr(point?.id ?? 0, point?.code ?? ""),
-    queryFn: async () => URL.createObjectURL(await fetchPointQr(point?.id ?? 0, "svg")),
+    queryFn: () => renderQr(point?.survey_url ?? "", "svg"),
     enabled: point !== null,
     staleTime: Infinity,
     gcTime: Infinity,

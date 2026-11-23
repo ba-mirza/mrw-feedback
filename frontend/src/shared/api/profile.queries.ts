@@ -6,13 +6,14 @@ import { fetchAdminProfile } from "./auth";
 
 export const profileQueryKeys = {
   root: ["admin-profile"] as const,
+  detail: (userId: string) => [...profileQueryKeys.root, userId] as const,
 };
 
-export function useAdminProfileQuery(enabled: boolean) {
+export function useAdminProfileQuery(userId: string | null) {
   return useQuery({
-    queryKey: profileQueryKeys.root,
+    queryKey: profileQueryKeys.detail(userId ?? ""),
     queryFn: fetchAdminProfile,
-    enabled,
+    enabled: userId !== null,
     retry: false,
     staleTime: QUERY_STALE_TIME.profile,
   });

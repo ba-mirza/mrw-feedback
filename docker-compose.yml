@@ -1,5 +1,9 @@
 services:
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:?}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY:?}
     ports:
       - "5175:80"

@@ -4,9 +4,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import logo from "@/assets/logo.svg";
+import { logout } from "@/shared/api/auth";
 import { useAdminProfileQuery } from "@/shared/api/profile.queries";
+import { useAuthSession } from "@/shared/api/session";
 import { ADMIN_ROUTES } from "@/shared/config/routes";
-import { setAccessToken } from "@/shared/lib/session";
 
 import styles from "./AppLayout.module.sass";
 
@@ -21,16 +22,18 @@ export default function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const profileQuery = useAdminProfileQuery(true);
+  const session = useAuthSession();
+  const profileQuery = useAdminProfileQuery(session?.user.id ?? null);
 
+  const adminName = profileQuery.data?.name || session?.user.email;
   const activeSection = SECTIONS.find((section) => location.pathname.startsWith(section.path))?.path ?? null;
 
   const handleSectionChange = (path: string | null) => {
     if (path) navigate(path);
   };
 
-  const handleLogout = () => {
-    setAccessToken(null);
+  const handleLogout = async () => {
+    await logout();
     queryClient.clear();
   };
 
@@ -46,9 +49,9 @@ export default function AppLayout() {
           </Group>
           <Group gap="sm" wrap="nowrap">
             <Text size="sm" c="dimmed" visibleFrom="sm">
-              {profileQuery.data?.name}
+              {adminName}
             </Text>
-            <Button variant="subtle" color="gray" size="xs" leftSection={<IconLogout size={ICON_SIZE} />} onClick={handleLogout}>
+            <Button variant="subtle" color="gray" size="xs" leftSection={<IconLogout size={ICON_SIZE} />} onClick={() => void handleLogout()}>
               Выйти
             </Button>
           </Group>

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { ApiError } from "@/shared/api/http";
-import { saveSurveyAnswer, startSurveySession, type SurveySession } from "@/shared/api/survey";
+import { saveSurveyAnswer, startSurveySession, SurveyError, type SurveySession } from "@/shared/api/survey";
 import { SURVEY_QUESTIONS } from "@/shared/config/survey-questions";
 
 export type SurveyFailure = "already_completed" | "point_not_found" | "network";
@@ -26,9 +25,9 @@ function toState(session: SurveySession): SurveyState {
 }
 
 function startFailure(error: unknown): SurveyFailure {
-  const code = error instanceof ApiError ? error.code : null;
+  const reason = error instanceof SurveyError ? error.reason : null;
 
-  return code && KNOWN_START_FAILURES.has(code as SurveyFailure) ? (code as SurveyFailure) : "network";
+  return reason && KNOWN_START_FAILURES.has(reason as SurveyFailure) ? (reason as SurveyFailure) : "network";
 }
 
 export function useSurvey(code: string) {
@@ -68,9 +67,9 @@ export function useSurvey(code: string) {
       try {
         setState(toState(await saveSurveyAnswer(state.session.id, question.id, option)));
       } catch (error) {
-        const errorCode = error instanceof ApiError ? error.code : null;
-        if (errorCode === "already_completed") setState({ kind: "thanks" });
-        else if (errorCode === "session_expired") retry();
+        const reason = error instanceof SurveyError ? error.reason : null;
+        if (reason === "already_completed") setState({ kind: "thanks" });
+        else if (reason === "session_expired" || reason === "session_not_found") retry();
         else setHasAnswerError(true);
       } finally {
         setPendingOption(null);

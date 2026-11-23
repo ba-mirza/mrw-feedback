@@ -2,12 +2,12 @@ import { useState } from "react";
 import { ActionIcon, Button, Center, CopyButton, Group, Image, Loader, Modal, Stack, Text, TextInput, Tooltip } from "@mantine/core";
 import { IconCheck, IconCopy, IconDownload, IconPrinter } from "@tabler/icons-react";
 
-import { fetchPointQr } from "@/shared/api/points";
 import { usePointQrQuery } from "@/shared/api/points.queries";
 import type { Point, QrFormat } from "@/shared/api/types";
 import { ADMIN_ROUTES } from "@/shared/config/routes";
-import { downloadBlob } from "@/shared/lib/download";
+import { downloadUrl } from "@/shared/lib/download";
 import { pointLabel } from "@/shared/lib/point-label";
+import { renderQr } from "@/shared/lib/qr";
 
 const ICON_SIZE = 16;
 const QR_PREVIEW_SIZE = 240;
@@ -25,7 +25,7 @@ export default function PointQrModal({ point, onClose }: PointQrModalProps) {
     if (!point) return;
     setDownloadingFormat(format);
     try {
-      downloadBlob(await fetchPointQr(point.id, format), `qr-${point.store}-${point.register_number}.${format}`);
+      downloadUrl(await renderQr(point.survey_url, format), `qr-${point.store}-${point.register_number}.${format}`);
     } finally {
       setDownloadingFormat(null);
     }

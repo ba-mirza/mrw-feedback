@@ -1,13 +1,13 @@
 import { Alert, Button, Center, Paper, PasswordInput, Stack, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useMutation } from "@tanstack/react-query";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 import logo from "@/assets/logo.svg";
 import { login } from "@/shared/api/auth";
-import { ApiError } from "@/shared/api/http";
+import { errorMessage } from "@/shared/api/errors";
+import { useAuthSession } from "@/shared/api/session";
 import { ADMIN_ROUTES } from "@/shared/config/routes";
-import { setAccessToken, useAccessToken } from "@/shared/lib/session";
 
 const FORM_WIDTH = 380;
 
@@ -24,8 +24,7 @@ function redirectTarget(state: unknown) {
 }
 
 export default function LoginPage() {
-  const token = useAccessToken();
-  const navigate = useNavigate();
+  const session = useAuthSession();
   const location = useLocation();
   const form = useForm<LoginValues>({
     initialValues: { email: "", password: "" },
@@ -35,16 +34,12 @@ export default function LoginPage() {
     },
   });
   const loginMutation = useMutation({
-    mutationFn: ({ email, password }: LoginValues) => login(email, password),
-    onSuccess: (tokens) => {
-      setAccessToken(tokens.access_token);
-      navigate(redirectTarget(location.state), { replace: true });
-    },
+    mutationFn: ({ email, password }: LoginValues) => login(email.trim(), password),
   });
 
-  const errorMessage = loginMutation.error instanceof ApiError ? loginMutation.error.message : null;
+  const loginError = loginMutation.error ? errorMessage(loginMutation.error) : null;
 
-  if (token) return <Navigate to={ADMIN_ROUTES.points} replace />;
+  if (session) return <Navigate to={redirectTarget(location.state)} replace />;
 
   return (
     <Center h="100vh" bg="gray.0">
@@ -53,7 +48,7 @@ export default function LoginPage() {
           <Stack>
             <img src={logo} alt="MARWIN" width={120} height={38} />
             <Title order={3}>Опросы покупателей</Title>
-            {errorMessage && <Alert color="red">{errorMessage}</Alert>}
+            {loginError && <Alert color="red">{loginError}</Alert>}
             <TextInput label="E-mail" autoComplete="username" {...form.getInputProps("email")} />
             <PasswordInput label="Пароль" autoComplete="current-password" {...form.getInputProps("password")} />
             <Button type="submit" loading={loginMutation.isPending}>

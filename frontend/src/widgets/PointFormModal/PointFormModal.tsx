@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Alert, Autocomplete, Button, Group, Modal, Stack, Switch, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 
-import { ApiError } from "@/shared/api/http";
+import { errorMessage } from "@/shared/api/errors";
 import { useCreatePointMutation, useUpdatePointMutation } from "@/shared/api/points.queries";
 import type { Point, PointInput } from "@/shared/api/types";
 
@@ -42,7 +42,7 @@ export default function PointFormModal({ opened, point, points, onClose, onSaved
   const storeOptions = uniqueSorted(
     points.filter((item) => !form.values.region || item.region === form.values.region).map((item) => item.store),
   );
-  const errorMessage = activeMutation.error instanceof ApiError ? activeMutation.error.message : null;
+  const submitError = activeMutation.error ? errorMessage(activeMutation.error) : null;
 
   useEffect(() => {
     if (!opened) return;
@@ -65,7 +65,7 @@ export default function PointFormModal({ opened, point, points, onClose, onSaved
     <Modal opened={opened} onClose={onClose} title={isEditing ? "Касса" : "Новая касса"} centered>
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack>
-          {errorMessage && <Alert color="red">{errorMessage}</Alert>}
+          {submitError && <Alert color="red">{submitError}</Alert>}
           <Autocomplete label="Город / регион" data={regionOptions} data-autofocus {...form.getInputProps("region")} />
           <Autocomplete label="Магазин" placeholder="Например, ТРЦ Mega" data={storeOptions} {...form.getInputProps("store")} />
           <TextInput label="Номер кассы" {...form.getInputProps("register_number")} />

@@ -1,25 +1,47 @@
-import { Center, Loader, Stack, Text, Title } from "@mantine/core";
+import { Button, Center, Loader, Stack, Text, Title } from "@mantine/core";
+import { useQueryClient } from "@tanstack/react-query";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
+import { logout } from "@/shared/api/auth";
 import { useAdminProfileQuery } from "@/shared/api/profile.queries";
+import { useAuthSession } from "@/shared/api/session";
 import { ADMIN_ROUTES } from "@/shared/config/routes";
-import { useAccessToken } from "@/shared/lib/session";
 
-const ADMIN_PERMISSIONS = ["points", "stats"];
+interface GateMessageProps {
+  title: string;
+  text: string;
+}
+
+function GateMessage({ title, text }: GateMessageProps) {
+  const queryClient = useQueryClient();
+
+  const handleLogout = async () => {
+    await logout();
+    queryClient.clear();
+  };
+
+  return (
+    <Center h="100vh">
+      <Stack align="center" gap="xs">
+        <Title order={3}>{title}</Title>
+        <Text c="dimmed">{text}</Text>
+        <Button variant="default" onClick={() => void handleLogout()}>
+          Выйти
+        </Button>
+      </Stack>
+    </Center>
+  );
+}
 
 export default function AuthGate() {
-  const token = useAccessToken();
+  const session = useAuthSession();
   const location = useLocation();
-  const profileQuery = useAdminProfileQuery(token !== null);
+  const profileQuery = useAdminProfileQuery(session?.user.id ?? null);
 
-  const hasToken = token !== null;
-  const hasAccess = ADMIN_PERMISSIONS.some((permission) => profileQuery.data?.permissions.includes(permission));
+  const isSessionLoading = session === undefined;
+  const isSignedOut = session === null;
 
-  if (!hasToken || profileQuery.isError) {
-    return <Navigate to={ADMIN_ROUTES.login} replace state={{ from: location.pathname }} />;
-  }
-
-  if (profileQuery.isPending) {
+  if (isSessionLoading || (!isSignedOut && profileQuery.isPending)) {
     return (
       <Center h="100vh">
         <Loader />
@@ -27,15 +49,16 @@ export default function AuthGate() {
     );
   }
 
-  if (!hasAccess) {
-    return (
-      <Center h="100vh">
-        <Stack align="center" gap="xs">
-          <Title order={3}>Нет доступа</Title>
-          <Text c="dimmed">У учётной записи нет прав на опросы</Text>
-        </Stack>
-      </Center>
-    );
+  if (isSignedOut) {
+    return <Navigate to={ADMIN_ROUTES.login} replace state={{ from: location.pathname }} />;
+  }
+
+  if (profileQuery.isError) {
+    return <GateMessage title="Не удалось проверить доступ" text="Обновите страницу или войдите заново" />;
+  }
+
+  if (!profileQuery.data) {
+    return <GateMessage title="Нет доступа" text="Учётная запись не добавлена в администраторы опросов" />;
   }
 
   return <Outlet />;

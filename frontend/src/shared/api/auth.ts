@@ -1,10 +1,19 @@
-import { request } from "./http";
-import type { AdminProfile, AuthTokens } from "./types";
+import { supabase } from "./supabase";
+import type { AdminProfile } from "./types";
 
-export function login(email: string, password: string) {
-  return request<AuthTokens>("/v1/auth/login", { method: "POST", body: { email, password } });
+export async function login(email: string, password: string) {
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
 }
 
-export function fetchAdminProfile() {
-  return request<AdminProfile>("/v1/admin/me");
+export async function logout() {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
+
+export async function fetchAdminProfile(): Promise<AdminProfile | null> {
+  const { data, error } = await supabase.from("admins").select("user_id, name").maybeSingle();
+  if (error) throw error;
+
+  return data;
 }
