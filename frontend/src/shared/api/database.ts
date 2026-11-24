@@ -1,4 +1,4 @@
-import type { QuestionStats } from "./types";
+import type { BreakdownGroup, BreakdownRow, QuestionStats } from "./types";
 
 type PointRow = {
   id: number;
@@ -32,6 +32,10 @@ type SurveyStatsArgs = {
   p_point_id?: number;
 }
 
+type SurveyBreakdownArgs = SurveyStatsArgs & {
+  p_group: BreakdownGroup;
+};
+
 type SurveyStatsResult = {
   sessions: number;
   completed_sessions: number;
@@ -47,6 +51,7 @@ export type Database = {
     Views: { [_ in never]: never };
     Functions: {
       survey_stats: { Args: SurveyStatsArgs; Returns: SurveyStatsResult };
+      survey_breakdown: { Args: SurveyBreakdownArgs; Returns: BreakdownRow[] };
     };
     Enums: { [_ in never]: never };
     CompositeTypes: { [_ in never]: never };
