@@ -2,15 +2,7 @@ import { Paper, Table, Text, Title } from "@mantine/core";
 
 import type { QuestionStats } from "@/shared/api/types";
 import type { SurveyQuestionConfig } from "@/shared/config/survey-questions";
-
-const PERCENT = 100;
-const EMPTY_VALUE = "—";
-
-function formatRate(rate: number | null) {
-  if (rate === null) return EMPTY_VALUE;
-
-  return `${(Math.round(rate * PERCENT * 10) / 10).toLocaleString("ru-RU")}%`;
-}
+import { formatCount, formatRate } from "@/shared/lib/format";
 
 interface QuestionTableProps {
   index: number;
@@ -27,7 +19,7 @@ export default function QuestionTable({ index, config, stats }: QuestionTablePro
         {index}. {config.title}
       </Title>
       <Text size="sm" c="dimmed" mb="sm">
-        Ответов: {(stats?.total ?? 0).toLocaleString("ru-RU")}
+        Ответов: {formatCount(stats?.total ?? 0)}
       </Text>
       <Table>
         <Table.Thead>
@@ -44,7 +36,7 @@ export default function QuestionTable({ index, config, stats }: QuestionTablePro
             return (
               <Table.Tr key={option.value}>
                 <Table.Td>{option.reportLabel ?? option.label}</Table.Td>
-                <Table.Td ta="right">{(item?.count ?? 0).toLocaleString("ru-RU")}</Table.Td>
+                <Table.Td ta="right">{formatCount(item?.count ?? 0)}</Table.Td>
                 <Table.Td ta="right" fw={600}>
                   {formatRate(item?.rate ?? null)}
                 </Table.Td>

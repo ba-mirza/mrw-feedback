@@ -48,3 +48,17 @@ export interface SurveyStats {
   completed_sessions: number;
   questions: QuestionStats[];
 }
+
+export type BreakdownGroup = "store" | "point" | "day";
+
+export interface BreakdownRow {
+  key: string;
+  region: string | null;
+  store: string | null;
+  register_number: string | null;
+  point_id: number | null;
+  day: string | null;
+  sessions: number;
+  completed: number;
+  answers: Partial<Record<QuestionStats["question"], Record<string, number>>>;
+}

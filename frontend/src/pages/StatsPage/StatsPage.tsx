@@ -3,8 +3,10 @@ import { Alert, Container, Group, SimpleGrid, Stack, Text, Title } from "@mantin
 import { usePointsQuery } from "@/shared/api/points.queries";
 import { useSurveyStatsQuery } from "@/shared/api/stats.queries";
 import { SURVEY_QUESTIONS } from "@/shared/config/survey-questions";
+import { formatCount } from "@/shared/lib/format";
 
 import { useStatsFilter } from "./model/use-stats-filter";
+import BreakdownTable from "./ui/BreakdownTable";
 import QuestionTable from "./ui/QuestionTable";
 import StatsFilters from "./ui/StatsFilters";
 
@@ -23,8 +25,8 @@ export default function StatsPage() {
           <Title order={2}>Статистика</Title>
           {stats && (
             <Text size="sm" c="dimmed">
-              Опросов: {stats.sessions.toLocaleString("ru-RU")} · до конца прошли:{" "}
-              {stats.completed_sessions.toLocaleString("ru-RU")}
+              Опросов: {formatCount(stats.sessions)} · до конца прошли:{" "}
+              {formatCount(stats.completed_sessions)}
             </Text>
           )}
         </Group>
@@ -40,6 +42,7 @@ export default function StatsPage() {
             />
           ))}
         </SimpleGrid>
+        <BreakdownTable filter={filterState.filter} />
       </Stack>
     </Container>
   );
